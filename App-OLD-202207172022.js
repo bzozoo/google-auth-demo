@@ -1,7 +1,7 @@
 // expo install expo-web-browser expo-auth-session expo-random
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Platform, StyleSheet, View, ScrollView, Text, Image, Button } from 'react-native';
+import { Platform, StyleSheet, View, Text, Image, Button } from 'react-native';
 import * as AuthSession from "expo-auth-session";
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,11 +12,9 @@ if (Platform.OS === 'web') {
 }
 
 export default function App() {
-  const [userInfo, setUserInfo] = React.useState(null);
-  const [userInfoRun, setUserInfoRun] = React.useState("No downloaded");
-  const [accessToken, setAccessToken] = React.useState("Not present")
-  const [responseObj, setResponseObj] = React.useState();
-  const [errMess, setErrmess] = React.useState("No error");
+  const [accessToken, setAccessToken] = React.useState();
+  const [userInfo, setUserInfo] = React.useState();
+  const [message, setMessage] = React.useState("Start");
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: "890705278336-sr2t9fg1o1s871chnbj3cn7skvsud7eb.apps.googleusercontent.com",
@@ -24,42 +22,45 @@ export default function App() {
     expoClientId: "890705278336-2ld11nu4qn8uoc3lrb9tf6aabo5t1cod.apps.googleusercontent.com"
   });
 
-  React.useEffect(()=>{
-    if(response !== null){
-      setResponseObj(JSON.stringify(response));
-    }
-    
-    if (response?.type === "success") {
-      const accessTok = response.authentication.accessToken;
-      setAccessToken(accessTok);
-    }
-  }, [response])
+  
 
-  React.useEffect(()=>{
-    if(accessToken !== "Not present"){
-
-      async function userSettings(){
-        const userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
-        headers: { Authorization: `Bearer ${accessToken}`}
-      });
-
-      setUserInfoRun("Csak majdnem")
-
-        userInfoResponse.json().then(data => {
-          setUserInfoRun(JSON.stringify(data))
-          setUserInfo(data);
-        });
+  const singInWithGoogle = async () => {
+    promptAsync().then(async (response)=>{
+      setMessage(JSON.stringify(response?.type));
+      if (response?.type === "success") {
+        setAccessToken(response.authentication.accessToken);
+        await getUserData(response.authentication.accessToken)
       }
-      userSettings();
-    }
-  }, [accessToken])
+    }).catch((error) =>{ 
+      alert(error)
+      console.log(error)
+    })
+  }
+
+  async function getUserData(accessToken) {
+
+    let userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+      headers: { Authorization: `Bearer ${accessToken}`}
+    });
+
+    userInfoResponse.json().then(data => {
+      setUserInfo(data);
+    });
+
+    showMessage({
+      position: {top: 55},
+      message: accessToken,
+      type: "info",
+    });
+
+  }
 
   function showUserInfo() {
     if (userInfo) {
       return (
         <View style={styles.userInfo}>
           <Image source={{uri: userInfo.picture}} style={styles.profilePic} />
-          <Text> Welcome {userInfo.name}</Text>
+          <Text>Welcome {userInfo.name}</Text>
           <Text>{userInfo.email}</Text>
         </View>
       );
@@ -70,19 +71,13 @@ export default function App() {
     <View style={styles.container}>
       <Text>
         DEMO{"\n"}
-        <ScrollView style={styles.scrollpanel}>
-          <Text>
-            ResObj?: {responseObj} -{"\n"}
-            AccessT?: {accessToken} -{"\n"}
-            Error?: {errMess} -{"\n"}
-            UserinfoObject?: {userInfoRun}{"\n"}    
-          </Text>
-        </ScrollView>
+        {message}
       </Text>
       {showUserInfo()}
       <Button 
         title={userInfo ? "Switch account..." : "Login ..."}
-        onPress={()=>promptAsync()}
+        //onPress={accessToken ? getUserData : () => { promptAsync({useProxy: true, showInRecents: false}) }}
+        onPress={singInWithGoogle}
       />
       <StatusBar style="auto" />
     </View>
@@ -95,10 +90,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  scrollpanel: {
-    backgroundColor: 'lightgreen',
-    flexGrow: 0.8
   },
   userInfo: {
     alignItems: 'center',

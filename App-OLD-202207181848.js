@@ -1,7 +1,7 @@
 // expo install expo-web-browser expo-auth-session expo-random
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Platform, StyleSheet, View, ScrollView, Text, Image, Button } from 'react-native';
+import { Platform, StyleSheet, View, Text, Image, Button } from 'react-native';
 import * as AuthSession from "expo-auth-session";
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,10 +12,10 @@ if (Platform.OS === 'web') {
 }
 
 export default function App() {
-  const [userInfo, setUserInfo] = React.useState(null);
+  const [userInfo, setUserInfo] = React.useState();
   const [userInfoRun, setUserInfoRun] = React.useState("No downloaded");
-  const [accessToken, setAccessToken] = React.useState("Not present")
-  const [responseObj, setResponseObj] = React.useState();
+  const [accessToken, setAccessToken] = React.useState("Not presend")
+  const [responseType, setResponseType] = React.useState("No response");
   const [errMess, setErrmess] = React.useState("No error");
 
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -24,35 +24,33 @@ export default function App() {
     expoClientId: "890705278336-2ld11nu4qn8uoc3lrb9tf6aabo5t1cod.apps.googleusercontent.com"
   });
 
-  React.useEffect(()=>{
-    if(response !== null){
-      setResponseObj(JSON.stringify(response));
+ 
+    function googleLogIn(){
+      promptAsync().then(async (res)=>{
+        
+        setResponseType(res?.type);
+        
+        if (res?.type === "success") {
+          const accessTok = res.authentication.accessToken
+          setAccessToken(accessTok);
+          await getUDat(accessTok);
+        }
+      }).catch((error)=>{setErrmess(JSON.stringify(error))})
     }
-    
-    if (response?.type === "success") {
-      const accessTok = response.authentication.accessToken;
-      setAccessToken(accessTok);
-    }
-  }, [response])
 
-  React.useEffect(()=>{
-    if(accessToken !== "Not present"){
 
-      async function userSettings(){
-        const userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
-        headers: { Authorization: `Bearer ${accessToken}`}
-      });
+  async function getUDat(accessToken){
+    const userInfoResponse = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+      headers: { Authorization: `Bearer ${accessToken}`}
+    });
 
-      setUserInfoRun("Csak majdnem")
+    setUserInfoRun("Csak majdnem")
 
-        userInfoResponse.json().then(data => {
-          setUserInfoRun(JSON.stringify(data))
-          setUserInfo(data);
-        });
-      }
-      userSettings();
-    }
-  }, [accessToken])
+    userInfoResponse.json().then(data => {
+      setUserInfoRun(JSON.stringify(data))
+      setUserInfo(data);
+    });
+  }
 
   function showUserInfo() {
     if (userInfo) {
@@ -70,19 +68,15 @@ export default function App() {
     <View style={styles.container}>
       <Text>
         DEMO{"\n"}
-        <ScrollView style={styles.scrollpanel}>
-          <Text>
-            ResObj?: {responseObj} -{"\n"}
-            AccessT?: {accessToken} -{"\n"}
-            Error?: {errMess} -{"\n"}
-            UserinfoObject?: {userInfoRun}{"\n"}    
-          </Text>
-        </ScrollView>
+        ResType?: {responseType} -{"\n"}
+        AccessT?: {accessToken} -{"\n"}
+        Error?: {errMess} -{"\n"}
+        UserinfoObject?: {userInfoRun}{"\n"}
       </Text>
       {showUserInfo()}
       <Button 
         title={userInfo ? "Switch account..." : "Login ..."}
-        onPress={()=>promptAsync()}
+        onPress={googleLogIn}
       />
       <StatusBar style="auto" />
     </View>
@@ -95,10 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  scrollpanel: {
-    backgroundColor: 'lightgreen',
-    flexGrow: 0.8
   },
   userInfo: {
     alignItems: 'center',

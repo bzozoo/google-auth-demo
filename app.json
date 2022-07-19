@@ -1,11 +1,13 @@
 {
   "expo": {
-    "name": "google-auth-demo",
-    "slug": "google-auth-demo",
+    "owner":"bzozoo",
+    "name": "Google Auth Demo",
+    "slug": "googleauthdemo",
+    "description":"Expo-Auth-Session teszt APP",
+    "scheme":"com.bzozoo.googleauthdemo.auth",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "com.bzozoo.googleauthdemo",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -23,11 +25,20 @@
       "buildNumber": "3"
     },
     "android": {
-      "package": "com.bzozoo.googleauthdemo",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "intentFilters":[
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": {
+            "scheme": "com.bzozoo.googleauthdemo"
+          }
+        }
+      ],
+      "package": "com.bzozoo.googleauthdemo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
